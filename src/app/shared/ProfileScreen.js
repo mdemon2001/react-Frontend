@@ -1,4 +1,4 @@
-// src/app/shared/ProfileScreen.js
+// src/app/(shared)/ProfileScreen.js
 
 import React, { useEffect, useState, useContext } from 'react';
 import {
@@ -13,19 +13,19 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
+import { useRouter } from 'expo-router'; // expo-router
 
 const ProfileScreen = () => {
-  const navigation = useNavigation();
+  const router = useRouter();
   const { userToken, logout } = useContext(AuthContext);
 
   // Adjust your base URLs/routes as necessary
-  const apiBaseUrl = 'http://localhost:5000/api';
-  const profileUrl = `${apiBaseUrl}/profile`;           
-  const bankUrl = `${apiBaseUrl}/bankdetail`;           
-  const contactsUrl = `${apiBaseUrl}/emergencyContacts`; 
-  const workHistoryUrl = `${apiBaseUrl}/attendance/history`; 
+  const apiBaseUrl = 'http://localhost:5001/api';
+  const profileUrl = `${apiBaseUrl}/profile`;
+  const bankUrl = `${apiBaseUrl}/bankdetail`;
+  const contactsUrl = `${apiBaseUrl}/emergencyContacts`;
+  const workHistoryUrl = `${apiBaseUrl}/attendance/history`;
 
   // Local state
   const [profile, setProfile] = useState({
@@ -33,7 +33,7 @@ const ProfileScreen = () => {
     jobTitle: '',
     email: '',
     phone: '',
-    profileImage: '',
+    profileImage: ''
   });
   const [bankDetail, setBankDetail] = useState(null);
   const [emergencyContacts, setEmergencyContacts] = useState([]);
@@ -55,7 +55,7 @@ const ProfileScreen = () => {
         axios.get(profileUrl, { headers }),     
         axios.get(bankUrl, { headers }),       
         axios.get(contactsUrl, { headers }),   
-        axios.get(workHistoryUrl, { headers }), 
+        axios.get(workHistoryUrl, { headers })
       ]);
 
       // Profile
@@ -71,7 +71,7 @@ const ProfileScreen = () => {
 
       // Work history (only show partial: top 2)
       const allHistory = historyRes.data || [];
-      setWorkHistory(allHistory.slice(0, 2)); // show only the 2 most recent
+      setWorkHistory(allHistory.slice(0, 2));
 
     } catch (error) {
       Alert.alert('Error', 'Failed to load profile data.');
@@ -95,10 +95,7 @@ const ProfileScreen = () => {
       [
         {
           text: 'Cancel',
-          style: 'cancel',
-          onPress: () => {
-            // Do nothing, stay on ProfileScreen
-          },
+          style: 'cancel'
         },
         {
           text: 'Logout',
@@ -106,8 +103,8 @@ const ProfileScreen = () => {
           onPress: () => {
             // Call the actual logout function from context
             logout();
-          },
-        },
+          }
+        }
       ],
       { cancelable: true }
     );
@@ -122,14 +119,14 @@ const ProfileScreen = () => {
     return <ActivityIndicator style={{ flex: 1 }} size="large" />;
   }
 
-  // Show only the first emergency contact to match the UI's partial display
+  // Show only the first emergency contact
   const primaryContact = emergencyContacts[0];
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
@@ -147,7 +144,7 @@ const ProfileScreen = () => {
             <Text style={styles.userName}>{profile.fullName}</Text>
             <Text style={styles.userRole}>{profile.jobTitle}</Text>
 
-            <TouchableOpacity onPress={() => navigation.navigate('EditProfileScreen')}>
+            <TouchableOpacity onPress={() => router.push('/shared/EditProfileScreen')}>
               <Text style={styles.editProfileLink}>
                 <Ionicons name="create-outline" size={14} color="#1976D2" /> Edit Profile
               </Text>
@@ -175,7 +172,7 @@ const ProfileScreen = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Emergency Contacts</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('EmergencyContactScreen')}>
+            <TouchableOpacity onPress={() => router.push('/shared/EmergencyContactScreen')}>
               <Ionicons name="add-circle-outline" size={24} color="#1976D2" />
             </TouchableOpacity>
           </View>
@@ -186,7 +183,7 @@ const ProfileScreen = () => {
                 <Text style={styles.cardSub}>{primaryContact.relationship}</Text>
                 <Text style={styles.cardSub}>{primaryContact.phoneNumber}</Text>
               </View>
-              <TouchableOpacity onPress={() => {/* e.g. open menu to edit/delete */}}>
+              <TouchableOpacity onPress={() => { /* e.g. open menu to edit/delete */ }}>
                 <Ionicons name="ellipsis-vertical" size={20} color="#666" />
               </TouchableOpacity>
             </View>
@@ -238,7 +235,7 @@ const ProfileScreen = () => {
           )}
           <TouchableOpacity
             style={styles.updateBankButton}
-            onPress={() => navigation.navigate('BankDetailScreen')}
+            onPress={() => router.push('/shared/BankDetailsScreen')}
           >
             <Ionicons name="create-outline" size={14} color="#1976D2" />
             <Text style={styles.updateBankText}> Update Bank Details</Text>
@@ -253,7 +250,7 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F8F9',
+    backgroundColor: '#F8F8F9'
   },
   header: {
     flexDirection: 'row',
@@ -262,87 +259,87 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'space-between',
-    elevation: 2,
+    elevation: 2
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#000'
   },
   logoutText: {
     color: '#f44336',
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   scrollContainer: {
     paddingHorizontal: 16,
-    marginTop: 10,
+    marginTop: 10
   },
   userInfoSection: {
     flexDirection: 'row',
     backgroundColor: '#fff',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 8
   },
   avatar: {
     width: 70,
     height: 70,
-    borderRadius: 35,
+    borderRadius: 35
   },
   userDetails: {
     marginLeft: 12,
-    justifyContent: 'center',
+    justifyContent: 'center'
   },
   userName: {
     fontSize: 17,
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   userRole: {
     fontSize: 14,
     color: '#666',
-    marginVertical: 4,
+    marginVertical: 4
   },
   editProfileLink: {
     fontSize: 14,
-    color: '#1976D2',
+    color: '#1976D2'
   },
   contactInfo: {
     marginTop: 10,
     backgroundColor: '#fff',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 8
   },
   contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 6
   },
   iconSpacing: {
-    marginRight: 6,
+    marginRight: 6
   },
   contactText: {
     fontSize: 15,
-    color: '#333',
+    color: '#333'
   },
   section: {
     marginTop: 20,
     backgroundColor: '#fff',
     borderRadius: 8,
-    padding: 16,
+    padding: 16
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 12,
-    alignItems: 'center',
+    alignItems: 'center'
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#333'
   },
   noneText: {
     fontSize: 14,
-    color: '#999',
+    color: '#999'
   },
   card: {
     backgroundColor: '#FAFAFA',
@@ -352,34 +349,34 @@ const styles = StyleSheet.create({
     elevation: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   cardName: {
     fontSize: 15,
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   cardSub: {
     fontSize: 14,
-    color: '#666',
+    color: '#666'
   },
   historyRow: {
     flexDirection: 'column',
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    paddingVertical: 10,
+    paddingVertical: 10
   },
   historyShift: {
     fontSize: 15,
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   historyHours: {
     fontSize: 14,
     color: '#1976D2',
-    marginVertical: 2,
+    marginVertical: 2
   },
   historyDate: {
     fontSize: 12,
-    color: '#666',
+    color: '#666'
   },
   updateBankButton: {
     flexDirection: 'row',
@@ -391,13 +388,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#1976D2',
     justifyContent: 'center',
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-start'
   },
   updateBankText: {
     color: '#1976D2',
     fontWeight: '600',
-    fontSize: 14,
-  },
+    fontSize: 14
+  }
 });
 
 export default ProfileScreen;

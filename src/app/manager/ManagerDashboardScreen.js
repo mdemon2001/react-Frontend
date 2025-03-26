@@ -1,4 +1,4 @@
-// src/app/manager/ManagerDashboardScreen.js
+// src/app/(manager)/ManagerDashboardScreen.js
 import React, { useEffect, useState, useContext } from 'react';
 import {
   View,
@@ -13,12 +13,12 @@ import {
 import axios from 'axios';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { AuthContext } from '../../context/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router'; // <-- expo-router instead of useNavigation
 
-const ManagerDashboardScreen = () => {
-  const navigation = useNavigation();
-  const { userToken, userId } = useContext(AuthContext);
-  const apiBaseUrl = 'http://localhost:5000/api';
+export default function ManagerDashboardScreen() {
+  const router = useRouter(); // <-- expo-router
+  const { userToken, userId, isLoading } = useContext(AuthContext);
+  const apiBaseUrl = 'http://localhost:5001/api';
 
   // Clock / time display
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -41,7 +41,21 @@ const ManagerDashboardScreen = () => {
 
   // Loading
   const [loading, setLoading] = useState(true);
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" />
+        <Text>Loading Auth...</Text>
+      </View>
+    );
+  }
 
+  // 2) If we have no token => route to login (or do something)
+  if (!userToken) {
+    // If not logged in, send user back to login
+    router.replace('/auth/LoginScreen'); // <-- Adjust your path if needed
+    return null; // Or a loading indicator
+  }
   useEffect(() => {
     // Update clock every second
     const timer = setInterval(() => {
@@ -59,10 +73,8 @@ const ManagerDashboardScreen = () => {
       const headers = { Authorization: `Bearer ${userToken}` };
 
       // 1) Are we clocked in? We'll see if there's an attendance doc with clockOut == null
-      //    We'll fetch today's attendance record for this manager:
       const attendanceRes = await axios.get(`${apiBaseUrl}/attendance/history`, { headers });
       const records = attendanceRes.data || [];
-      // If there's an item for "today" with no clockOut, we're clocked in
       const todayDateStr = new Date().toISOString().split('T')[0];
       const openRecord = records.find(r => {
         const recordDate = r.date.split('T')[0];
@@ -70,31 +82,24 @@ const ManagerDashboardScreen = () => {
       });
       setIsClockedIn(!!openRecord);
 
-      // 2) Employees in stats
+      // 2) Employees stats
       const statsRes = await axios.get(`${apiBaseUrl}/attendance/today-stats`, { headers });
       setPresentEmployees(statsRes.data.present || 0);
       setTotalEmployees(statsRes.data.total || 0);
 
-      // 3) Today’s shifts from /schedules/date?date=YYYY-MM-DD
-      const scheduleRes = await axios.get(
-        `${apiBaseUrl}/schedules/date?date=${todayDateStr}`,
-        { headers }
-      );
+      // 3) Today’s shifts
+      const scheduleRes = await axios.get(`${apiBaseUrl}/schedules/date?date=${todayDateStr}`, { headers });
       setTodaysShiftsCount(scheduleRes.data?.length || 0);
 
-      // 4) Announcements from /announcements
+      // 4) Announcements
       const annRes = await axios.get(`${apiBaseUrl}/announcements`, { headers });
-      // Let’s just show the top 2-3 newest
       const allAnnouncements = annRes.data || [];
-      const sortedAnn = allAnnouncements.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
+      const sortedAnn = allAnnouncements.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setAnnouncements(sortedAnn.slice(0, 2));
 
-      // 5) Recent Activity from /history?days=1
+      // 5) Recent Activity
       const activityRes = await axios.get(`${apiBaseUrl}/history?days=1`, { headers });
       const acts = activityRes.data || [];
-      // Show only the top 2
       setRecentActivity(acts.slice(0, 2));
     } catch (error) {
       Alert.alert('Error', 'Failed to load manager dashboard data.');
@@ -111,7 +116,7 @@ const ManagerDashboardScreen = () => {
         // clock in
         await axios.post(
           `${apiBaseUrl}/attendance/clockin`,
-          { shiftType: 'Morning' }, // or pick from logic
+          { shiftType: 'Morning' },
           { headers }
         );
         setIsClockedIn(true);
@@ -140,19 +145,20 @@ const ManagerDashboardScreen = () => {
   return (
     <View style={styles.wrapper}>
       <ScrollView style={styles.container}>
-
         {/* Header - Avatar, "Manager View," icons */}
         <View style={styles.header}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
             <Image
-              source={{ uri: 'https://via.placeholder.com/60' }} // your manager avatar
+              source={{ uri: 'https://via.placeholder.com/60' }}
               style={styles.avatar}
             />
             <Text style={styles.headerTitle}>Manager View</Text>
           </View>
           <View style={{ flexDirection: 'row', gap: 20 }}>
-            <Ionicons name="notifications-outline" size={24} color="#000" />
-            <Ionicons name="settings-outline" size={24} color="#000" />
+      {/* Make this icon clickable */}
+      <TouchableOpacity onPress={() => router.push('/shared/SettingsScreen')}>
+        <Ionicons name="settings-outline" size={24} color="#000" />
+      </TouchableOpacity>
           </View>
         </View>
 
@@ -192,7 +198,7 @@ const ManagerDashboardScreen = () => {
         <View style={styles.buttonsRow}>
           <TouchableOpacity
             style={styles.featureButton}
-            onPress={() => navigation.navigate('EmployeeManagementScreen')}
+            onPress={() => router.push('/manager/EmployeeManagementScreen')}
           >
             <FontAwesome5 name="users" size={24} color="#1976D2" />
             <Text style={styles.featureText}>Employees</Text>
@@ -200,7 +206,7 @@ const ManagerDashboardScreen = () => {
 
           <TouchableOpacity
             style={styles.featureButton}
-            onPress={() => navigation.navigate('ScheduleManagementScreen')}
+            onPress={() => router.push('/manager/CreateRotaScreen')}
           >
             <Ionicons name="briefcase-outline" size={24} color="#1976D2" />
             <Text style={styles.featureText}>Schedule</Text>
@@ -208,7 +214,7 @@ const ManagerDashboardScreen = () => {
 
           <TouchableOpacity
             style={styles.featureButton}
-            onPress={() => navigation.navigate('PayrollManagementScreen')}
+            onPress={() => router.push('/manager/PayrollManagementScreen')}
           >
             <FontAwesome5 name="money-check-alt" size={24} color="#1976D2" />
             <Text style={styles.featureText}>Payroll</Text>
@@ -216,7 +222,7 @@ const ManagerDashboardScreen = () => {
 
           <TouchableOpacity
             style={styles.featureButton}
-            onPress={() => navigation.navigate('ApprovalScreen')}
+            onPress={() => router.push('/manager/ApprovalRequestsScreen')}
           >
             <Ionicons name="paper-plane-outline" size={24} color="#1976D2" />
             <Text style={styles.featureText}>Request</Text>
@@ -227,7 +233,7 @@ const ManagerDashboardScreen = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Announcements</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('AnnouncementManagementScreen')}>
+            <TouchableOpacity onPress={() => router.push('/manager/AnnouncementManagementScreen')}>
               <Ionicons name="add-circle-outline" size={24} color="#1976D2" />
             </TouchableOpacity>
           </View>
@@ -263,7 +269,6 @@ const ManagerDashboardScreen = () => {
                 </View>
                 <View style={styles.activityTextWrapper}>
                   <Text style={styles.activityTitle}>{item.title}</Text>
-                  {/* Show how long ago or item.subtitle */}
                   <Text style={styles.activitySubtitle}>
                     {item.subtitle || 'A few minutes ago'}
                   </Text>
@@ -274,11 +279,11 @@ const ManagerDashboardScreen = () => {
         </View>
       </ScrollView>
 
-      {/* Footer navigation (remove "Schedule") => Home, Messages, Reports, Profile */}
+      {/* Footer navigation => Home, Messages, Reports, Profile */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('ManagerDashboardScreen')}
+          onPress={() => router.push('/manager/ManagerDashboardScreen')}
         >
           <Ionicons name="home-outline" size={24} color="#1976D2" />
           <Text style={[styles.footerText, { color: '#1976D2' }]}>Home</Text>
@@ -286,7 +291,7 @@ const ManagerDashboardScreen = () => {
 
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('MessagesScreen')}
+          onPress={() => router.push('/shared/MessagesScreen')}
         >
           <Ionicons name="chatbubble-ellipses-outline" size={24} color="#555" />
           <Text style={styles.footerText}>Messages</Text>
@@ -294,7 +299,7 @@ const ManagerDashboardScreen = () => {
 
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('ReportsScreen')}
+          onPress={() => router.push('/manager/ReportsScreen')}
         >
           <Ionicons name="bar-chart-outline" size={24} color="#555" />
           <Text style={styles.footerText}>Reports</Text>
@@ -302,7 +307,7 @@ const ManagerDashboardScreen = () => {
 
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('ProfileScreen')}
+          onPress={() => router.push('/shared/ProfileScreen')}
         >
           <Ionicons name="person-outline" size={24} color="#555" />
           <Text style={styles.footerText}>Profile</Text>
@@ -310,7 +315,7 @@ const ManagerDashboardScreen = () => {
       </View>
     </View>
   );
-};
+}
 
 // Example styles
 const styles = StyleSheet.create({
@@ -485,5 +490,3 @@ const styles = StyleSheet.create({
     color: '#555',
   },
 });
-
-export default ManagerDashboardScreen;

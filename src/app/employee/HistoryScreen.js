@@ -19,7 +19,7 @@ const HistoryScreen = () => {
   const navigation = useNavigation();
   const { userToken, userId } = useContext(AuthContext);
 
-  const apiBaseUrl = 'http://localhost:5000/api';
+  const apiBaseUrl = 'http://localhost:5001/api';
   const historyUrl = `${apiBaseUrl}/history`;
   const socketServerUrl = apiBaseUrl.replace('/api', '');
 

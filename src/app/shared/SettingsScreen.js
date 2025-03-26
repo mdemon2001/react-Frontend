@@ -14,10 +14,12 @@ import {
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../../context/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+
+// expo-router
+import { useRouter } from 'expo-router';
 
 const SettingsScreen = () => {
-  const navigation = useNavigation();
+  const router = useRouter();
   const { userToken } = useContext(AuthContext);
 
   // Replace with your actual API base URL:
@@ -27,7 +29,7 @@ const SettingsScreen = () => {
   const [userProfile, setUserProfile] = useState({
     name: '',
     role: '',
-    avatar: '',
+    avatar: ''
   });
 
   // State to store settings from backend
@@ -36,7 +38,7 @@ const SettingsScreen = () => {
     shiftAlerts: false,
     darkMode: false,
     dataPrivacy: false,
-    privacyPolicyAccepted: false,
+    privacyPolicyAccepted: false
   });
 
   // On mount, fetch both user profile and settings
@@ -49,7 +51,7 @@ const SettingsScreen = () => {
   const fetchUserProfile = async () => {
     try {
       const res = await axios.get(`${apiBaseUrl}/user/profile`, {
-        headers: { Authorization: `Bearer ${userToken}` },
+        headers: { Authorization: `Bearer ${userToken}` }
       });
       setUserProfile(res.data);
     } catch (error) {
@@ -61,7 +63,7 @@ const SettingsScreen = () => {
   const fetchUserSettings = async () => {
     try {
       const res = await axios.get(`${apiBaseUrl}/settings`, {
-        headers: { Authorization: `Bearer ${userToken}` },
+        headers: { Authorization: `Bearer ${userToken}` }
       });
       setSettings(res.data);
     } catch (error) {
@@ -78,14 +80,14 @@ const SettingsScreen = () => {
     // Send updated setting to backend
     try {
       await axios.put(`${apiBaseUrl}/settings`, updatedSettings, {
-        headers: { Authorization: `Bearer ${userToken}` },
+        headers: { Authorization: `Bearer ${userToken}` }
       });
     } catch (error) {
       Alert.alert('Error', 'Unable to update settings.');
     }
   };
 
-  // Accept the privacy policy (sets `privacyPolicyAccepted` to true)
+  // Accept the privacy policy
   const acceptPrivacyPolicy = async () => {
     try {
       await axios.patch(
@@ -103,15 +105,13 @@ const SettingsScreen = () => {
   // Display a placeholder avatar if userProfile.avatar is empty
   const avatarSource = userProfile.avatar
     ? { uri: userProfile.avatar }
-    : {
-        uri: 'https://via.placeholder.com/150/808080/FFFFFF/?text=Avatar',
-      };
+    : { uri: 'https://via.placeholder.com/150/808080/FFFFFF/?text=Avatar' };
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
@@ -121,16 +121,15 @@ const SettingsScreen = () => {
         {/* Profile Card */}
         <TouchableOpacity
           style={styles.profileCard}
-          onPress={() => navigation.navigate('ProfileScreen')}
+          // Suppose the ProfileScreen is in (shared) folder:
+          onPress={() => router.push('/shared/ProfileScreen')}
         >
           <Image source={avatarSource} style={styles.avatar} />
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>
               {userProfile.name || 'Your Name'}
             </Text>
-            <Text style={styles.profileRole}>
-              {userProfile.role || 'Role'}
-            </Text>
+            <Text style={styles.profileRole}>{userProfile.role || 'Role'}</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#aaa" />
         </TouchableOpacity>
@@ -152,8 +151,10 @@ const SettingsScreen = () => {
           <TouchableOpacity
             style={styles.row}
             onPress={() => {
-              // Toggle shiftAlerts and maybe navigate if desired
+              // Toggle the shiftAlerts
               updateSettings('shiftAlerts', !settings.shiftAlerts);
+              // Also navigate to ShiftAlertScreen in (employee) folder
+              router.push('/employee/ShiftAlertScreen');
             }}
           >
             <View>
@@ -164,7 +165,10 @@ const SettingsScreen = () => {
             </View>
             <Switch
               value={settings.shiftAlerts}
-              onValueChange={(value) => updateSettings('shiftAlerts', value)}
+              onValueChange={(value) => {
+                updateSettings('shiftAlerts', value);
+                router.push('/employee/ShiftAlertScreen');
+              }}
             />
           </TouchableOpacity>
         </View>
@@ -186,7 +190,8 @@ const SettingsScreen = () => {
           <Text style={styles.sectionTitle}>HELP & SUPPORT</Text>
           <TouchableOpacity
             style={styles.row}
-            onPress={() => navigation.navigate('FaqScreen')}
+            // Suppose these screens are also in employee or shared
+            onPress={() => router.push('/employee/FaqScreen')}
           >
             <Text style={styles.label}>FAQs</Text>
             <Ionicons name="chevron-forward" size={20} color="#aaa" />
@@ -194,7 +199,7 @@ const SettingsScreen = () => {
 
           <TouchableOpacity
             style={styles.row}
-            onPress={() => navigation.navigate('SupportScreen')}
+            onPress={() => router.push('/employee/SupportScreen')}
           >
             <Text style={styles.label}>Contact Support</Text>
             <Ionicons name="chevron-forward" size={20} color="#aaa" />
@@ -207,7 +212,7 @@ const SettingsScreen = () => {
 
           <TouchableOpacity
             style={styles.row}
-            onPress={() => navigation.navigate('PrivacyPolicyScreen')}
+            onPress={() => router.push('/employee/PrivacyPolicyScreen')}
           >
             <Text style={styles.label}>Privacy Policy</Text>
             <Ionicons name="chevron-forward" size={20} color="#aaa" />
@@ -215,7 +220,7 @@ const SettingsScreen = () => {
 
           <TouchableOpacity
             style={styles.row}
-            onPress={() => navigation.navigate('SecuritySettingsScreen')}
+            onPress={() => router.push('/employee/SecuritySettingsScreen')}
           >
             <Text style={styles.label}>Security Settings</Text>
             <Ionicons name="chevron-forward" size={20} color="#aaa" />
@@ -244,10 +249,12 @@ const SettingsScreen = () => {
   );
 };
 
+export default SettingsScreen;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F8F9',
+    backgroundColor: '#F8F8F9'
   },
   header: {
     flexDirection: 'row',
@@ -255,52 +262,52 @@ const styles = StyleSheet.create({
     height: 56,
     paddingHorizontal: 16,
     backgroundColor: '#fff',
-    elevation: 2,
+    elevation: 2
   },
   headerTitle: {
     marginLeft: 16,
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#000'
   },
   scrollContainer: {
-    flex: 1,
+    flex: 1
   },
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
     padding: 16,
-    marginTop: 8,
+    marginTop: 8
   },
   avatar: {
     width: 50,
     height: 50,
-    borderRadius: 25,
+    borderRadius: 25
   },
   profileInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 12
   },
   profileName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   profileRole: {
     fontSize: 14,
-    color: '#999',
+    color: '#999'
   },
   section: {
     backgroundColor: '#fff',
     marginTop: 8,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 12
   },
   sectionTitle: {
     fontSize: 12,
     color: '#666',
     marginBottom: 8,
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   row: {
     flexDirection: 'row',
@@ -308,16 +315,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#eee'
   },
   label: {
     fontSize: 16,
-    color: '#333',
+    color: '#333'
   },
   subtitle: {
     fontSize: 12,
     color: '#888',
-    marginTop: 2,
+    marginTop: 2
   },
   acceptPolicy: {
     marginTop: 16,
@@ -327,12 +334,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 8,
     borderColor: '#1976D2',
-    borderWidth: 1,
+    borderWidth: 1
   },
   acceptPolicyText: {
     color: '#1976D2',
-    fontWeight: 'bold',
-  },
+    fontWeight: 'bold'
+  }
 });
-
-export default SettingsScreen;

@@ -1,5 +1,4 @@
-// src/app/shared/BankDetailScreen.js
-
+// src/app/(shared)/BankDetailScreen.js
 import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
@@ -16,15 +15,17 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import { useNavigation } from '@react-navigation/native';
-import { AuthContext } from '../../context/AuthContext'; // Adjust path as needed
+import { AuthContext } from '../../context/AuthContext'; // Adjust path if needed
 
-const BankDetailScreen = () => {
-  const navigation = useNavigation();
+// expo-router
+import { useRouter } from 'expo-router';
+
+export default function BankDetailScreen() {
+  const router = useRouter();
   const { userToken } = useContext(AuthContext);
 
   // Replace with your actual API base URL
-  const apiBaseUrl = 'http://localhost:5000/api';
+  const apiBaseUrl = 'http://localhost:5001/api';
 
   // State to hold bank detail fields
   const [bankName, setBankName] = useState('');
@@ -46,7 +47,7 @@ const BankDetailScreen = () => {
   const fetchBankDetail = async () => {
     try {
       const response = await axios.get(`${apiBaseUrl}/bankdetail`, {
-        headers: { Authorization: `Bearer ${userToken}` },
+        headers: { Authorization: `Bearer ${userToken}` }
       });
 
       // If response.data is null, user has no bank details yet
@@ -100,12 +101,13 @@ const BankDetailScreen = () => {
   // Hide modal and navigate away or do anything else
   const handleDone = () => {
     setSuccessModalVisible(false);
-    // For instance, just go back to previous screen:
-    navigation.goBack();
+    // Instead of navigation.goBack(), use router.back()
+    router.back();
   };
 
   const handleCancel = () => {
-    navigation.goBack();
+    // Instead of navigation.goBack(), use router.back()
+    router.back();
   };
 
   return (
@@ -115,7 +117,7 @@ const BankDetailScreen = () => {
     >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Update Bank Details</Text>
@@ -227,7 +229,7 @@ const BankDetailScreen = () => {
       </Modal>
     </KeyboardAvoidingView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   header: {
@@ -237,17 +239,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    elevation: 2,
+    elevation: 2
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#000'
   },
   scrollContainer: {
     flex: 1,
     paddingHorizontal: 16,
-    marginTop: 10,
+    marginTop: 10
   },
   infoBox: {
     flexDirection: 'row',
@@ -255,25 +257,25 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 16
   },
   infoBoxText: {
     marginLeft: 10,
     color: '#1976D2',
     fontSize: 14,
-    flex: 1,
+    flex: 1
   },
   formContainer: {
     backgroundColor: '#fff',
     borderRadius: 8,
-    padding: 16,
+    padding: 16
   },
   label: {
     marginTop: 12,
     marginBottom: 4,
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#333'
   },
   inputRow: {
     flexDirection: 'row',
@@ -283,14 +285,14 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginBottom: 10,
     paddingHorizontal: 10,
-    height: 42,
+    height: 42
   },
   icon: {
-    marginRight: 6,
+    marginRight: 6
   },
   input: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 15
   },
   footer: {
     flexDirection: 'row',
@@ -298,7 +300,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderTopWidth: 1,
     borderColor: '#eee',
-    justifyContent: 'space-between',
+    justifyContent: 'space-between'
   },
   cancelButton: {
     width: '45%',
@@ -307,11 +309,11 @@ const styles = StyleSheet.create({
     borderColor: '#1976D2',
     borderRadius: 6,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'center'
   },
   cancelButtonText: {
     color: '#1976D2',
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   saveButton: {
     width: '45%',
@@ -319,25 +321,25 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: '#1976D2',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'center'
   },
   saveButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   modalContainer: {
     width: '80%',
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 20,
-    alignItems: 'center',
+    alignItems: 'center'
   },
   checkIconContainer: {
     width: 60,
@@ -346,30 +348,28 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 16
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 8
   },
   modalMessage: {
     fontSize: 14,
     textAlign: 'center',
     color: '#555',
-    marginBottom: 20,
+    marginBottom: 20
   },
   doneButton: {
     width: '50%',
     backgroundColor: '#1976D2',
     paddingVertical: 10,
     borderRadius: 6,
-    alignItems: 'center',
+    alignItems: 'center'
   },
   doneButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
-  },
+    fontWeight: 'bold'
+  }
 });
-
-export default BankDetailScreen;

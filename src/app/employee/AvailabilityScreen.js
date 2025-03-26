@@ -23,9 +23,9 @@ const AvailabilityScreen = () => {
   const navigation = useNavigation();
   const { userToken, userId } = useContext(AuthContext);
 
-  const apiBaseUrl = 'http://localhost:5000/api';
+  const apiBaseUrl = 'http://localhost:5001/api/users';
 
-  // Current view: 'day' | 'week' | 'month'
+  // Current view mode: 'day' | 'week' | 'month'
   const [viewMode, setViewMode] = useState('week');
 
   // Day mode date
@@ -45,28 +45,31 @@ const AvailabilityScreen = () => {
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState(true);
 
-  // "Day Options" modal for tapping a day (in either week or month)
+  // "Day Options" modal
   const [dayOptionsModalVisible, setDayOptionsModalVisible] = useState(false);
   const [selectedDateForOptions, setSelectedDateForOptions] = useState(null); // dateStr
 
-  // "Custom Hours" modal (text inputs)
+  // "Custom Hours" modal
   const [customModalVisible, setCustomModalVisible] = useState(false);
   const [customDate, setCustomDate] = useState(null);
-  const [tempStartTimeStr, setTempStartTimeStr] = useState('09:00'); // typed
-  const [tempEndTimeStr, setTempEndTimeStr] = useState('17:00');     // typed
+  const [tempStartTimeStr, setTempStartTimeStr] = useState('09:00');
+  const [tempEndTimeStr, setTempEndTimeStr] = useState('17:00');
 
+  // Fetch once on mount
   useEffect(() => {
     fetchAvailability();
   }, []);
 
-  // Fetch from backend
+  // Fetch user availability from backend
   const fetchAvailability = async () => {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${userToken}` };
-      // Suppose GET /availability/:userId => array of { date, type, startTime, endTime }
+      // GET /availability/:userId
       const res = await axios.get(`${apiBaseUrl}/availability/${userId}`, { headers });
       const data = res.data || [];
+
+      // Convert array to a map
       const map = {};
       data.forEach((item) => {
         map[item.date] = {
@@ -83,11 +86,12 @@ const AvailabilityScreen = () => {
     }
   };
 
-  // Rebuild markedDates for month
+  // Rebuild markedDates whenever availabilityMap changes
   useEffect(() => {
     setMarkedDates(buildMarkedDates(availabilityMap));
   }, [availabilityMap]);
 
+  // Build markedDates for the Calendar in Month view
   function buildMarkedDates(avMap) {
     // color by type
     const result = {};
@@ -102,25 +106,43 @@ const AvailabilityScreen = () => {
     return result;
   }
 
-  // Submit to backend
+  // Submit final availability to the backend
   const submitAvailability = async () => {
     setLoading(true);
     try {
-      const payload = Object.keys(availabilityMap).map((ds) => ({
-        date: ds,
-        ...availabilityMap[ds]
+      // Convert availabilityMap into the EXACT structure the backend expects
+      const payload = Object.entries(availabilityMap).map(([date, entry]) => ({
+        date,
+        type: entry.type,
+        ...(entry.type === 'custom' && { 
+          startTime: entry.startTime,
+          endTime: entry.endTime 
+        })
       }));
-      const headers = { Authorization: `Bearer ${userToken}` };
-      await axios.put(`${apiBaseUrl}/availability/${userId}`, { availability: payload }, { headers });
+  
+      console.log("Sending payload:", payload); // 🚨 Debug log
+  
+      const headers = { 
+        Authorization: `Bearer ${userToken}`,
+        "Content-Type": "application/json" 
+      };
+  
+      await axios.put(
+        `${apiBaseUrl}/availability`,
+        { userId, availability: payload }, // Ensure userId is included
+        { headers }
+      );
+  
       Alert.alert('Success', 'Availability saved successfully.');
     } catch (error) {
-      Alert.alert('Error', 'Failed to save availability.');
+      console.error("Full error:", error.response?.data || error.message); // 🚨 Detailed error
+      Alert.alert('Error', error.response?.data?.message || 'Failed to save.');
     } finally {
       setLoading(false);
     }
   };
 
-  // ********** DAY MODE **********
+  // ============= Day Mode =============
   const handlePrevDay = () => {
     const d = new Date(dayModeDate);
     d.setDate(d.getDate() - 1);
@@ -149,7 +171,7 @@ const AvailabilityScreen = () => {
     openCustomHoursModal(ds);
   }
 
-  // ********** WEEK MODE **********
+  // ============= Week Mode =============
   const handlePrevWeek = () => {
     const d = new Date(currentWeekStart);
     d.setDate(d.getDate() - 7);
@@ -165,15 +187,14 @@ const AvailabilityScreen = () => {
     setDayOptionsModalVisible(true);
   }
 
-  // ********** MONTH MODE **********
-  // Tapping a day now also opens the "Day Options" modal, not toggling unavailable
+  // ============= Month Mode =============
   function handleMonthDayPress(dayObj) {
     const ds = dayObj.dateString;
     setSelectedDateForOptions(ds);
     setDayOptionsModalVisible(true);
   }
 
-  // Day Options modal logic
+  // Day Options modal
   function setDateType(dateStr, newType) {
     setAvailabilityMap((prev) => {
       const updated = { ...prev };
@@ -201,7 +222,7 @@ const AvailabilityScreen = () => {
     openCustomHoursModal(dateStr);
   }
 
-  // ********** Quick Select **********
+  // ============= Quick Select =============
   function handleAvailableAllDay() {
     if (viewMode === 'day') {
       setDayModeType('allDay');
@@ -260,7 +281,7 @@ const AvailabilityScreen = () => {
     }
   }
 
-  // "Recurring pattern" => resets everything
+  // Clear all availability (demo for "recurring pattern")
   function handleRecurringPattern() {
     setAvailabilityMap({});
     Alert.alert('Recurring Pattern', 'All availability cleared (demo).');
@@ -276,7 +297,7 @@ const AvailabilityScreen = () => {
     }
   }
 
-  // ********** Custom Hours Modal (text inputs) **********
+  // ============= Custom Hours Modal =============
   function openCustomHoursModal(dateStr) {
     setCustomDate(dateStr);
     const existing = availabilityMap[dateStr];
@@ -291,7 +312,6 @@ const AvailabilityScreen = () => {
 
   function saveCustomHours() {
     if (!customDate) return;
-    // Validate typed times (HH:MM)
     if (!isValidHHMM(tempStartTimeStr) || !isValidHHMM(tempEndTimeStr)) {
       Alert.alert('Invalid time format', 'Use HH:MM (24-hr). E.g. 09:00 or 13:30');
       return;
@@ -325,8 +345,12 @@ const AvailabilityScreen = () => {
       {/* Guidelines */}
       <View style={styles.guidelines}>
         <Text style={styles.guidelineTitle}>Guidelines</Text>
-        <Text><Ionicons name="information-circle-outline" size={16} /> Minimum 20 hours per week required</Text>
-        <Text><Ionicons name="information-circle-outline" size={16} /> Set availability at least 2 weeks in advance</Text>
+        <Text>
+          <Ionicons name="information-circle-outline" size={16} /> Minimum 20 hours per week required
+        </Text>
+        <Text>
+          <Ionicons name="information-circle-outline" size={16} /> Set availability at least 2 weeks in advance
+        </Text>
       </View>
 
       {/* Mode Switch */}
@@ -384,7 +408,7 @@ const AvailabilityScreen = () => {
           style={styles.calendar}
           theme={{
             selectedDayBackgroundColor: '#1976D2',
-            todayTextColor: '#1976D2'
+            todayTextColor: '#1976D2',
           }}
         />
       )}
@@ -416,7 +440,7 @@ const AvailabilityScreen = () => {
         </View>
       </View>
 
-      {/* Notifications */}
+      {/* Notifications Switch */}
       <View style={styles.notifications}>
         <Text style={styles.sectionTitle}>Notifications</Text>
         <View style={styles.switchContainer}>
@@ -426,7 +450,7 @@ const AvailabilityScreen = () => {
         </View>
       </View>
 
-      {/* Submit */}
+      {/* Save Button */}
       <TouchableOpacity style={styles.submitButton} onPress={submitAvailability}>
         <Text style={styles.submitText}>Save & Submit Availability</Text>
       </TouchableOpacity>
@@ -440,7 +464,9 @@ const AvailabilityScreen = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.optionModalContainer}>
-            <Text style={styles.optionModalTitle}>Availability for {selectedDateForOptions}</Text>
+            <Text style={styles.optionModalTitle}>
+              Availability for {selectedDateForOptions}
+            </Text>
             <TouchableOpacity style={styles.optionBtn} onPress={() => setDateType(selectedDateForOptions, 'allDay')}>
               <Text>All Day</Text>
             </TouchableOpacity>
@@ -504,7 +530,7 @@ const AvailabilityScreen = () => {
   );
 };
 
-/** Day mode component */
+/** DayModeView */
 function DayModeView({ date, availabilityMap, onPrevDay, onNextDay, setType, openCustomHours }) {
   const ds = toISODate(date);
   const info = availabilityMap[ds];
@@ -550,7 +576,7 @@ function DayModeView({ date, availabilityMap, onPrevDay, onNextDay, setType, ope
   );
 }
 
-/** Week mode component */
+/** WeekModeView */
 function WeekModeView({ currentWeekStart, availabilityMap, onPrevWeek, onNextWeek, onDayPress }) {
   const weekDates = buildWeekDates(currentWeekStart);
   const rangeLabel = formatWeekRange(currentWeekStart);
@@ -593,7 +619,7 @@ function WeekModeView({ currentWeekStart, availabilityMap, onPrevWeek, onNextWee
   );
 }
 
-/** Utility functions */
+/** Helpers */
 function getMonday(date) {
   const d = new Date(date);
   const day = d.getDay(); // Sunday=0, Monday=1
@@ -610,6 +636,7 @@ function buildWeekDates(monday) {
   }
   return arr;
 }
+
 function formatWeekRange(monday) {
   const end = new Date(monday);
   end.setDate(end.getDate() + 6);
@@ -618,15 +645,17 @@ function formatWeekRange(monday) {
   const endStr = end.toLocaleDateString(undefined, opts);
   return `${startStr} - ${endStr}`;
 }
+
 function toISODate(dateObj) {
   return dateObj.toISOString().split('T')[0];
 }
+
 function isValidHHMM(str) {
   const regex = /^([01]\d|2[0-3]):([0-5]\d)$/; 
   return regex.test(str);
 }
 
-// Styles
+/** Styles */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fbfc', padding: 20 },
   header: {

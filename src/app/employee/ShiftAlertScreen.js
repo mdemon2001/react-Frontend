@@ -1,4 +1,4 @@
-// src/app/employee/ShiftAlertScreen.js
+// src/app/(employee)/ShiftAlertScreen.js
 
 import React, { useState, useEffect, useContext } from 'react';
 import {
@@ -11,13 +11,13 @@ import {
   ScrollView
 } from 'react-native';
 import axios from 'axios';
-import { Ionicons } from '@expo/vector-icons';  // or 'react-native-vector-icons/Ionicons'
-import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router'; // ← expo-router
 
 import { AuthContext } from '../../context/AuthContext';
 
 // Adjust this to your server’s base URL
-const apiBaseUrl = 'http://localhost:5000/api';
+const apiBaseUrl = 'http://localhost:5001/api';
 
 // For convenience, define possible alert times in minutes with labels
 const ALERT_OPTIONS = [
@@ -27,8 +27,8 @@ const ALERT_OPTIONS = [
   { label: '2 hours before', value: 120 }
 ];
 
-const ShiftAlertScreen = () => {
-  const navigation = useNavigation();
+export default function ShiftAlertScreen() {
+  const router = useRouter();
   const { userToken } = useContext(AuthContext);
 
   // Local state
@@ -75,15 +75,14 @@ const ShiftAlertScreen = () => {
       const updatedSettings = {
         ...userSettings,
         shiftAlerts: {
-          // If your schema also has 'enabled', you can keep or set it here
-          enabled: true, 
+          enabled: true,
           alertTime: selectedTime
         }
       };
 
       // PUT /settings with updated shiftAlerts
       const response = await axios.put(`${apiBaseUrl}/settings`, updatedSettings, { headers });
-      setUserSettings(response.data);  // new settings from server
+      setUserSettings(response.data); // new settings from server
 
       Alert.alert('Success', 'Your shift alert settings have been updated.');
     } catch (error) {
@@ -112,7 +111,7 @@ const ShiftAlertScreen = () => {
     <View style={styles.wrapper}>
       {/* Header with back arrow */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('HomeScreen')}>
+        <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Shift Alert Settings</Text>
@@ -138,9 +137,9 @@ const ShiftAlertScreen = () => {
             {/* Explanation */}
             <View style={styles.explanationContainer}>
               <Text style={styles.explanationText}>
-                Choose how far in advance you'd like to receive notifications before your shift
-                starts. We recommend setting this to at least 30 minutes to ensure you have enough
-                time to prepare.
+                Choose how far in advance you'd like to receive notifications before
+                your shift starts. We recommend setting this to at least 30 minutes
+                to ensure you have enough time to prepare.
               </Text>
             </View>
 
@@ -170,10 +169,9 @@ const ShiftAlertScreen = () => {
       </ScrollView>
     </View>
   );
-};
+}
 
-export default ShiftAlertScreen;
-
+// Example Styles
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,

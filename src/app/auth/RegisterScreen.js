@@ -1,43 +1,40 @@
-// app/Auth/RegisterScreen.js
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+// src/app/auth/RegisterScreen.js
 import axios from 'axios';
-//import { API_URL } from '../../constants/api';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 
-const RegisterScreen = ({ navigation }) => {
+const RegisterScreen = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('Employee');
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const router = useRouter();
 
   const handleRegister = async () => {
-    if (!termsAccepted || !privacyAccepted) {
-      Alert.alert("Error", "Please accept Terms and Conditions and Privacy Policy.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match.");
-      return;
-    }
-
     try {
-      const response = await axios.post(`http://localhost:5000/api/auth/register`, {
-        name,
-        email,
-        password,
-        role
-      });
+      const response = await axios.post(
+        `http://localhost:5001/api/auth/register`,
+        { name, email, password, role }
+      );
 
       if (response.status === 201) {
         Alert.alert("Success", "Account created successfully!");
-        navigation.navigate('Login');
+        router.push('/auth/LoginScreen');
       }
     } catch (error) {
-      Alert.alert("Error", error.response?.data?.msg || "Something went wrong.");
+      Alert.alert(
+        "Error",
+        error.response?.data?.msg || "Something went wrong."
+      );
     }
   };
 
@@ -70,30 +67,16 @@ const RegisterScreen = ({ navigation }) => {
         onChangeText={setPassword}
       />
 
-      <TextInput
-        placeholder="Confirm Password"
-        secureTextEntry
-        style={styles.input}
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-      />
-
       <View style={styles.roleContainer}>
         <TouchableOpacity onPress={() => setRole('Employee')} style={styles.radio}>
-          <Text style={role === 'Employee' && styles.selected}>○ Employee</Text>
+          <Text style={role === 'Employee' ? styles.selected : null}>
+            {role === 'Employee' ? '●' : '○'} Employee
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setRole('Manager')} style={styles.radio}>
-          <Text style={role === 'Manager' && styles.selected}>○ Manager</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.checkboxContainer}>
-        <TouchableOpacity onPress={() => setTermsAccepted(!termsAccepted)}>
-          <Text>{termsAccepted ? '[✓]' : '[ ]'} I agree to the Terms and Conditions</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => setPrivacyAccepted(!privacyAccepted)}>
-          <Text>{privacyAccepted ? '[✓]' : '[ ]'} I agree to the Privacy Policy</Text>
+          <Text style={role === 'Manager' ? styles.selected : null}>
+            {role === 'Manager' ? '●' : '○'} Manager
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -101,12 +84,14 @@ const RegisterScreen = ({ navigation }) => {
         <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('LoginScreen')}>
+      <TouchableOpacity onPress={() => router.push('/auth/LoginScreen')}>
         <Text style={styles.loginLink}>Already have an account? Log In</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 };
+
+export default RegisterScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -146,9 +131,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#007bff'
   },
-  checkboxContainer: {
-    marginVertical: 10
-  },
   button: {
     backgroundColor: '#2563EB',
     padding: 15,
@@ -166,5 +148,3 @@ const styles = StyleSheet.create({
     marginTop: 15
   }
 });
-
-export default RegisterScreen;

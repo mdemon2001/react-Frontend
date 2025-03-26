@@ -1,5 +1,4 @@
-// src/app/employee/SickLogScreen.js (or src/app/shared/SickLogScreen.js)
-
+// src/app/(employee)/SickLogScreen.js
 import React, { useState, useContext, useEffect } from 'react';
 import {
   View,
@@ -15,16 +14,15 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRouter, useSearchParams } from 'expo-router'; // <--- expo-router
 import { AuthContext } from '../../context/AuthContext'; // Adjust path if needed
 
 const SickLogScreen = () => {
-  const route = useRoute();
-  const navigation = useNavigation();
-  const { userToken, userId } = useContext(AuthContext);
+  const router = useRouter();
+  // Retrieve params from expo-router
+  const { shiftId, shiftDate, startTime, endTime } = useSearchParams();
 
-  // Suppose these were passed from ScheduleScreen:
-  const { shiftId, shiftDate, startTime, endTime } = route.params || {};
+  const { userToken, userId } = useContext(AuthContext);
 
   // We'll track the selected date as a string (dd/mm/yyyy) just for UI
   // If you need advanced date picking, consider 'react-native-date-picker' or DateTimePicker
@@ -35,7 +33,7 @@ const SickLogScreen = () => {
   const [successModalVisible, setSuccessModalVisible] = useState(false);
 
   // Base URL for your API
-  const apiBaseUrl = 'http://localhost:5000/api';
+  const apiBaseUrl = 'http://localhost:5001/api';
 
   useEffect(() => {
     // Convert the shift date from e.g. "2025-03-20T00:00:00.000Z" to "DD/MM/YYYY"
@@ -77,12 +75,12 @@ const SickLogScreen = () => {
 
   const handleCloseModal = () => {
     setSuccessModalVisible(false);
-    // Go back to the schedule or wherever appropriate
-    navigation.goBack();
+    // Return to the previous screen
+    router.back();
   };
 
   const handleCancel = () => {
-    navigation.goBack();
+    router.back();
   };
 
   return (
@@ -92,7 +90,7 @@ const SickLogScreen = () => {
     >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Call in Sick</Text>
@@ -139,7 +137,7 @@ const SickLogScreen = () => {
           <View style={styles.shiftBox}>
             <Ionicons name="time-outline" size={18} color="#555" style={{ marginRight: 6 }} />
             <Text style={styles.shiftText}>
-              {startTime} - {endTime} {'  '}
+              {startTime} - {endTime}{' '}
               {shiftDate ? 'Today' : ''}
             </Text>
           </View>
@@ -185,6 +183,8 @@ const SickLogScreen = () => {
     </KeyboardAvoidingView>
   );
 };
+
+export default SickLogScreen;
 
 // Example Styles
 const styles = StyleSheet.create({
@@ -346,5 +346,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-
-export default SickLogScreen;

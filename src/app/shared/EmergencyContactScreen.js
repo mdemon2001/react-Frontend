@@ -15,12 +15,12 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
 import { Picker } from '@react-native-picker/picker';
 import { AuthContext } from '../../context/AuthContext'; // Adjust path if needed
-
+import { useRouter } from 'expo-router';
 const EmergencyContactScreen = () => {
   const { userToken } = useContext(AuthContext);
-
+  const router = useRouter();
   // Base URL for your API (adjust if necessary)
-  const apiBaseUrl = 'http://localhost:5000/api/emergencyContacts';
+  const apiBaseUrl = 'http://localhost:5001/api/emergencyContacts';
 
   // State to store the fetched contacts
   const [contacts, setContacts] = useState([]);
@@ -168,7 +168,7 @@ const EmergencyContactScreen = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => { /* e.g. navigation.goBack() */ }}>
+        <TouchableOpacity onPress={() => { router.back(); }}>
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Emergency Contacts</Text>

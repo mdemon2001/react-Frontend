@@ -1,39 +1,94 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+// app/(auth)/LoginScreen.js
 import axios from 'axios';
+import { useRouter } from 'expo-router';
+import React, { useState, useRef, useEffect, useContext } from 'react';
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Animated,
+  ActivityIndicator
+} from 'react-native';
+import { AuthContext } from '../../context/AuthContext';
 
-const LoginScreen = ({ navigation }) => {
+export default function LoginScreen() {
+  const router = useRouter();
+  const { login } = useContext(AuthContext);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Typewriter effect
+  const fullHeaderText = "Employee Scheduling & Shift Management App";
+  const [displayedText, setDisplayedText] = useState("");
+
+  useEffect(() => {
+    let index = 0;
+    const interval = setInterval(() => {
+      setDisplayedText((prev) => prev + fullHeaderText[index]);
+      index++;
+      if (index >= fullHeaderText.length) {
+        clearInterval(interval);
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Neon glow animation
+  const glowAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 10,
+          duration: 1000,
+          useNativeDriver: false,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: false,
+        }),
+      ])
+    ).start();
+  }, [glowAnim]);
 
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Validation Error', 'Email and Password are required');
       return;
     }
-
+    setSubmitting(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', { email, password });
-      const { token, user } = response.data;
-      // Navigate based on user role
-      if (user.role === 'Manager') {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'ManagerFlow' }], // Must match AppNavigator name
-        });
+      // 1) This calls the AuthContext login, which returns the user’s role
+      const role = await login(email, password);
+      
+      // 2) Depending on role, route accordingly
+      if (role === 'Manager') {
+        router.replace('/manager/ManagerDashboardScreen');
       } else {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'EmployeeFlow' }], // Must match AppNavigator name
-        });
+        router.replace('/employee/HomeScreen');
       }
-    } catch (error) {
-      Alert.alert('Login Error', error.response?.data?.message || 'An error occurred during login');
+
+    } catch (err) {
+      Alert.alert('Login Error', err.message || 'An error occurred during login');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* Animated, neon, typewriter-style header */}
+      <Animated.Text style={[styles.glowHeader, { textShadowRadius: glowAnim }]}>
+        {displayedText}
+      </Animated.Text>
+
       <View style={styles.formContainer}>
         <Text style={styles.header}>Welcome Back</Text>
         <Text style={styles.subHeader}>Please sign in to continue</Text>
@@ -42,6 +97,7 @@ const LoginScreen = ({ navigation }) => {
           style={styles.input}
           placeholder="Enter your email"
           keyboardType="email-address"
+          autoCapitalize="none"
           value={email}
           onChangeText={setEmail}
         />
@@ -54,33 +110,41 @@ const LoginScreen = ({ navigation }) => {
           onChangeText={setPassword}
         />
 
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>Sign In</Text>
+        <TouchableOpacity 
+          style={styles.loginButton} 
+          onPress={handleLogin}
+          disabled={submitting}
+        >
+          {submitting ? (
+            <ActivityIndicator color="#fff"/>
+          ) : (
+            <Text style={styles.loginButtonText}>Sign In</Text>
+          )}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('RegisterScreen')}>
+        <TouchableOpacity onPress={() => router.push('/auth/RegisterScreen')}>
           <Text style={styles.linkText}>New Here? Sign Up</Text>
         </TouchableOpacity>
-
-        <View style={styles.socialLoginContainer}>
-          <TouchableOpacity style={styles.socialButton}>
-            <Text>Google</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialButton}>
-            <Text>Apple</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
+    backgroundColor: '#F4F7FA',
     justifyContent: 'center',
     padding: 20,
-    backgroundColor: '#F4F7FA',
+  },
+  glowHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 30,
+    color: '#3366FF',
+    textShadowColor: '#00FFFF',
+    textShadowOffset: { width: 0, height: 0 },
   },
   formContainer: {
     backgroundColor: '#FFFFFF',
@@ -126,18 +190,4 @@ const styles = StyleSheet.create({
     color: '#3366FF',
     marginBottom: 20,
   },
-  socialLoginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  socialButton: {
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    alignItems: 'center',
-    width: '45%',
-  },
 });
-
-export default LoginScreen;

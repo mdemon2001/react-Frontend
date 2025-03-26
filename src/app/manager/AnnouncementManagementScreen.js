@@ -1,4 +1,4 @@
-// src/app/manager/AnnouncementManagementScreen.js
+// src/app/(manager)/AnnouncementManagementScreen.js
 
 import React, { useEffect, useState, useContext } from 'react';
 import {
@@ -15,11 +15,14 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';           // <--- expo-router
 import { AuthContext } from '../../context/AuthContext';
-import { useNavigation } from '@react-navigation/native';
 
-const AnnouncementManagementScreen = () => {
-  const navigation = useNavigation();
+// Updated base URL
+const apiBaseUrl = 'http://localhost:5001/api'; // Adjust as needed
+
+export default function AnnouncementManagementScreen() {
+  const router = useRouter();
   const { userToken } = useContext(AuthContext);
 
   // List of announcements from backend
@@ -38,8 +41,6 @@ const AnnouncementManagementScreen = () => {
   // Sub-modal for adding a single attachment
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
   const [tempAttachmentUrl, setTempAttachmentUrl] = useState('');
-
-  const apiBaseUrl = 'http://localhost:5000/api'; // Adjust as needed
 
   useEffect(() => {
     fetchAnnouncements();
@@ -83,7 +84,7 @@ const AnnouncementManagementScreen = () => {
         title,
         message,
         audience,
-        attachments,
+        attachments
       };
       await axios.post(`${apiBaseUrl}/announcements`, payload, { headers });
 
@@ -112,6 +113,14 @@ const AnnouncementManagementScreen = () => {
     return `${seconds} second${seconds === 1 ? '' : 's'} ago`;
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
   // Sub-modal: add an attachment
   const addAttachment = () => {
     if (!tempAttachmentUrl.trim()) {
@@ -123,29 +132,21 @@ const AnnouncementManagementScreen = () => {
     setShowAttachmentModal(false);
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.openDrawer?.()}>
+        {/* Menu icon => placeholder for a future drawer */}
+        <TouchableOpacity onPress={() => console.log('Menu pressed (implement drawer if needed)')}>
           <Ionicons name="menu" size={28} />
         </TouchableOpacity>
+
         <Text style={styles.headerTitle}>Announcements</Text>
+
         <View style={{ flexDirection: 'row', gap: 16 }}>
-          {/* E.g. notifications icon → go to NotificationsScreen if you have one */}
-          <TouchableOpacity onPress={() => navigation.navigate('NotificationsScreen')}>
-            <Ionicons name="notifications-outline" size={24} color="#000" />
-          </TouchableOpacity>
-          {/* Settings → SettingsScreen */}
-          <TouchableOpacity onPress={() => navigation.navigate('SettingsScreen')}>
+          {/* Removed notifications icon as requested */}
+          {/* Settings => shared/SettingsScreen */}
+          <TouchableOpacity onPress={() => router.push('/shared/SettingsScreen')}>
             <Ionicons name="settings-outline" size={24} color="#000" />
           </TouchableOpacity>
         </View>
@@ -164,7 +165,7 @@ const AnnouncementManagementScreen = () => {
         {announcements.length === 0 ? (
           <Text style={styles.noAnnouncements}>No announcements found.</Text>
         ) : (
-          announcements.map(ann => (
+          announcements.map((ann) => (
             <View key={ann._id} style={styles.announcementCard}>
               {/* Title row */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -199,11 +200,11 @@ const AnnouncementManagementScreen = () => {
         )}
       </ScrollView>
 
-      {/* Footer nav (Home → ManagerDashboardScreen, Announcements → current screen, Profile → ProfileScreen) */}
+      {/* Footer nav (Home → /manager/ManagerDashboardScreen, Announcements => current, Profile => /shared/ProfileScreen) */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('ManagerDashboardScreen')}
+          onPress={() => router.replace('/manager/ManagerDashboardScreen')}
         >
           <Ionicons name="home-outline" size={24} color="#555" />
           <Text>Home</Text>
@@ -217,7 +218,7 @@ const AnnouncementManagementScreen = () => {
 
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('ProfileScreen')}
+          onPress={() => router.replace('/shared/ProfileScreen')}
         >
           <Ionicons name="person-outline" size={24} color="#555" />
           <Text>Profile</Text>
@@ -343,78 +344,78 @@ const AnnouncementManagementScreen = () => {
       </Modal>
     </View>
   );
-};
+}
 
-export default AnnouncementManagementScreen;
-
-// Example styles
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'center'
   },
-  container: { flex: 1, backgroundColor: '#f9fcff' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f9fcff' 
+  },
   header: {
     flexDirection: 'row',
     padding: 16,
     alignItems: 'center',
     backgroundColor: '#fff',
     justifyContent: 'space-between',
-    elevation: 2,
+    elevation: 2
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   createButton: {
     backgroundColor: '#1976D2',
     margin: 16,
     borderRadius: 8,
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 12
   },
   createButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 16
   },
   noAnnouncements: {
     color: '#888',
     fontStyle: 'italic',
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: 20
   },
   announcementCard: {
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 14,
     marginBottom: 16,
-    elevation: 1,
+    elevation: 1
   },
   announcementTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
-    color: '#333',
+    color: '#333'
   },
   announcementMessage: {
     fontSize: 14,
     color: '#555',
-    marginBottom: 8,
+    marginBottom: 8
   },
   infoRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 10
   },
   infoItem: {
     flexDirection: 'row',
     gap: 4,
-    alignItems: 'center',
+    alignItems: 'center'
   },
   infoText: {
     fontSize: 12,
-    color: '#666',
+    color: '#666'
   },
   footer: {
     flexDirection: 'row',
@@ -423,93 +424,91 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     backgroundColor: '#fff',
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'space-around'
   },
   footerItem: {
-    alignItems: 'center',
+    alignItems: 'center'
   },
   footerItemActive: {
-    alignItems: 'center',
+    alignItems: 'center'
   },
-
-  // Modals
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
+    justifyContent: 'center'
   },
   modalContainer: {
     backgroundColor: '#fff',
     marginHorizontal: 20,
     borderRadius: 8,
     padding: 16,
-    maxHeight: '80%',
+    maxHeight: '80%'
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 10,
-    alignItems: 'center',
+    alignItems: 'center'
   },
   modalTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   cancelText: {
     color: '#f44336',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 16
   },
   label: {
     fontSize: 14,
     color: '#333',
     marginTop: 12,
     marginBottom: 4,
-    fontWeight: '600',
+    fontWeight: '600'
   },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
     padding: 10,
     borderRadius: 6,
-    fontSize: 14,
+    fontSize: 14
   },
   attachmentRow: {
     flexDirection: 'row',
     gap: 6,
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 4
   },
   attachmentText: {
     fontSize: 14,
-    color: '#555',
+    color: '#555'
   },
   addAttachmentBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 8
   },
   modalButtonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
+    marginTop: 16
   },
   modalButton: {
     borderRadius: 6,
     paddingHorizontal: 16,
     paddingVertical: 10,
     alignItems: 'center',
-    flex: 0.48,
+    flex: 0.48
   },
   attachmentModalContainer: {
     backgroundColor: '#fff',
     marginHorizontal: 30,
     borderRadius: 8,
-    padding: 16,
+    padding: 16
   },
   attachmentModalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
-  },
+    marginTop: 16
+  }
 });

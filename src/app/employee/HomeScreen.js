@@ -1,4 +1,4 @@
-// src/app/employee/HomeScreen.js
+// src/app/(employee)/HomeScreen.js
 
 import React, { useEffect, useState, useContext } from 'react';
 import {
@@ -12,16 +12,16 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location'; // For geolocation (Expo)
+import { useRouter } from 'expo-router';    // <--- expo-router instead of useNavigation
 
 import { AuthContext } from '../../context/AuthContext';
 
 // Adjust to your server’s base URL
-const apiBaseUrl = 'http://localhost:5000/api';
+const apiBaseUrl = 'http://localhost:5001/api';
 
-const HomeScreen = () => {
-  const navigation = useNavigation();
+export default function HomeScreen() {
+  const router = useRouter();  // <--- expo-router hook
   const { userToken, userId } = useContext(AuthContext);
 
   // Local state
@@ -54,11 +54,11 @@ const HomeScreen = () => {
       const headers = { Authorization: `Bearer ${userToken}` };
       // Parallel requests to your various endpoints
       const [userRes, annRes, statusRes, scheduleRes, summaryRes] = await Promise.all([
-        axios.get(`${apiBaseUrl}/users/${userId}`, { headers }),                  
-        axios.get(`${apiBaseUrl}/announcements`, { headers }),                    
+        axios.get(`${apiBaseUrl}/users/${userId}`, { headers }),
+        axios.get(`${apiBaseUrl}/announcements`, { headers }),
         axios.get(`${apiBaseUrl}/attendance/current-status/${userId}`, { headers }),
-        axios.get(`${apiBaseUrl}/schedules/today/${userId}`, { headers }),        
-        axios.get(`${apiBaseUrl}/payrolls/weekly-summary/${userId}`, { headers }) 
+        axios.get(`${apiBaseUrl}/schedules/today/${userId}`, { headers }),
+        axios.get(`${apiBaseUrl}/payrolls/weekly-summary/${userId}`, { headers })
       ]);
 
       setUser(userRes.data);
@@ -143,10 +143,10 @@ const HomeScreen = () => {
           {/* Right: Role, Notification, Settings */}
           <View style={styles.topRightContainer}>
             <Text style={styles.userRole}>{user.role || 'Staff'}</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('ShiftAlertScreen')}>
+            <TouchableOpacity onPress={() => router.push('/employee/ShiftAlertScreen')}>
               <Ionicons name="notifications-outline" size={24} style={styles.iconSpacing} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('SettingsScreen')}>
+            <TouchableOpacity onPress={() => router.push('/shared/SettingsScreen')}>
               <Ionicons name="settings-outline" size={24} />
             </TouchableOpacity>
           </View>
@@ -173,7 +173,11 @@ const HomeScreen = () => {
             {isClockedIn ? 'Currently Clocked In' : 'Currently Clocked Out'}
           </Text>
           <Text style={styles.timeText}>
-            {`Local Time: ${currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
+            {`Local Time: ${currentTime.toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit'
+            })}`}
           </Text>
 
           <TouchableOpacity
@@ -207,17 +211,17 @@ const HomeScreen = () => {
           <ActionButton
             title="Swap Shift"
             icon="exchange-alt"
-            onPress={() => navigation.navigate('ShiftswapScreen')}
+            onPress={() => router.push('/employee/ShiftswapScreen')}
           />
           <ActionButton
             title="Availability"
             icon="calendar-check"
-            onPress={() => navigation.navigate('AvailabilityScreen')}
+            onPress={() => router.push('/employee/AvailabilityScreen')}
           />
           <ActionButton
             title="Messages"
             icon="envelope"
-            onPress={() => navigation.navigate('MessagesScreen')}
+            onPress={() => router.push('/shared/MessagesScreen')}
           />
         </View>
 
@@ -235,21 +239,23 @@ const HomeScreen = () => {
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('HomeScreen')}
+          onPress={() => router.push('/employee/HomeScreen')}
         >
           <Ionicons name="home" size={24} color="#1976D2" />
           <Text style={[styles.footerText, { color: '#1976D2' }]}>Home</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('ScheduleScreen')}
+          onPress={() => router.push('/employee/ScheduleScreen')}
         >
           <Ionicons name="calendar" size={24} color="#555" />
           <Text style={styles.footerText}>Schedule</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('ProfileScreen')}
+          onPress={() => router.push('/shared/ProfileScreen')}
         >
           <Ionicons name="person" size={24} color="#555" />
           <Text style={styles.footerText}>Profile</Text>
@@ -257,9 +263,7 @@ const HomeScreen = () => {
       </View>
     </View>
   );
-};
-
-export default HomeScreen;
+}
 
 const styles = StyleSheet.create({
   container: {

@@ -14,15 +14,15 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 
 import { AuthContext } from '../../context/AuthContext';
 
 // Adjust this to your server’s base URL
-const apiBaseUrl = 'http://localhost:5000/api';
+const apiBaseUrl = 'http://localhost:5001/api';
 
 const CreateRotaScreen = () => {
-  const navigation = useNavigation();
+  const router = useRouter();
   const { userToken } = useContext(AuthContext);
 
   // --------------------------
@@ -811,7 +811,7 @@ const CreateRotaScreen = () => {
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('ManagerDashboardScreen')}
+          onPress={() => router.replace('/manager/ManagerDashboardScreen')}
         >
           <Ionicons name="home-outline" size={24} color="#555" />
           <Text style={styles.footerText}>Home</Text>
@@ -824,10 +824,11 @@ const CreateRotaScreen = () => {
 
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('SettingsScreen')}
+          onPress={() => router.replace('/shared/SettingsScreen')}
         >
           <Ionicons name="settings-outline" size={24} color="#555" />
           <Text style={styles.footerText}>Settings</Text>
+          
         </TouchableOpacity>
       </View>
     </View>

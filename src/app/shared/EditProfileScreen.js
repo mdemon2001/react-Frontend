@@ -1,4 +1,4 @@
-// src/app/shared/EditProfileScreen.js
+// src/app/(shared)/EditProfileScreen.js
 
 import React, { useState, useEffect, useContext } from 'react';
 import {
@@ -15,15 +15,17 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext'; // Adjust path if needed
 
-const EditProfileScreen = () => {
-  const navigation = useNavigation();
+// expo-router
+import { useRouter } from 'expo-router';
+
+export default function EditProfileScreen() {
+  const router = useRouter();
   const { userToken } = useContext(AuthContext);
 
   // Replace with your own API base URL
-  const apiBaseUrl = 'http://localhost:5000/api';
+  const apiBaseUrl = 'http://localhost:5001/api';
 
   // Local state for profile data from backend
   const [profile, setProfile] = useState({
@@ -31,7 +33,7 @@ const EditProfileScreen = () => {
     jobTitle: '',
     email: '',
     phone: '',
-    profileImage: '',
+    profileImage: ''
   });
 
   useEffect(() => {
@@ -42,7 +44,7 @@ const EditProfileScreen = () => {
   const fetchProfile = async () => {
     try {
       const response = await axios.get(`${apiBaseUrl}/profile`, {
-        headers: { Authorization: `Bearer ${userToken}` },
+        headers: { Authorization: `Bearer ${userToken}` }
       });
       setProfile(response.data);
     } catch (error) {
@@ -55,14 +57,9 @@ const EditProfileScreen = () => {
     setProfile((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Top-left arrow → navigate to main ProfileScreen
-  const handleGoToProfile = () => {
-    navigation.navigate('ProfileScreen');
-  };
-
-  // Cancel button → just go back
+  // Cancel button → just go back using expo-router
   const handleCancel = () => {
-    navigation.goBack();
+    router.back();
   };
 
   // Save changes → PUT /profile
@@ -75,14 +72,14 @@ const EditProfileScreen = () => {
           jobTitle: profile.jobTitle,
           email: profile.email,
           phone: profile.phone,
-          profileImage: profile.profileImage,
+          profileImage: profile.profileImage
         },
         {
-          headers: { Authorization: `Bearer ${userToken}` },
+          headers: { Authorization: `Bearer ${userToken}` }
         }
       );
       Alert.alert('Success', 'Profile updated successfully.');
-      navigation.goBack();
+      router.back();
     } catch (error) {
       Alert.alert(
         'Error',
@@ -94,18 +91,16 @@ const EditProfileScreen = () => {
   // Show a placeholder image if profileImage is empty
   const avatarSource = profile.profileImage
     ? { uri: profile.profileImage }
-    : {
-        uri: 'https://via.placeholder.com/100/808080/FFFFFF/?text=Avatar',
-      };
+    : { uri: 'https://via.placeholder.com/100/808080/FFFFFF/?text=Avatar' };
 
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: '#F8F8F9' }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Header with single arrow (left) -> main ProfileScreen */}
+      {/* Header with single arrow (left) -> go back */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleGoToProfile}>
+        <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
@@ -174,9 +169,8 @@ const EditProfileScreen = () => {
       </View>
     </KeyboardAvoidingView>
   );
-};
+}
 
-// Example styles
 const styles = StyleSheet.create({
   header: {
     height: 56,
@@ -185,28 +179,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    elevation: 2,
+    elevation: 2
   },
   headerTitle: {
     flex: 1,
     marginLeft: 16,
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#000'
   },
   scrollContainer: {
     flex: 1,
     paddingHorizontal: 16,
-    marginTop: 10,
+    marginTop: 10
   },
   avatarContainer: {
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: 20
   },
   avatar: {
     width: 100,
     height: 100,
-    borderRadius: 50,
+    borderRadius: 50
   },
   cameraIconContainer: {
     position: 'absolute',
@@ -214,18 +208,18 @@ const styles = StyleSheet.create({
     right: 10,
     backgroundColor: '#1976D2',
     borderRadius: 18,
-    padding: 6,
+    padding: 6
   },
   formContainer: {
     backgroundColor: '#fff',
     borderRadius: 8,
-    padding: 16,
+    padding: 16
   },
   label: {
     marginTop: 10,
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#333'
   },
   input: {
     marginTop: 6,
@@ -234,7 +228,7 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 6,
     paddingHorizontal: 10,
-    fontSize: 15,
+    fontSize: 15
   },
   footer: {
     flexDirection: 'row',
@@ -242,7 +236,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderTopWidth: 1,
     borderColor: '#eee',
-    justifyContent: 'space-between',
+    justifyContent: 'space-between'
   },
   cancelButton: {
     width: '45%',
@@ -251,11 +245,11 @@ const styles = StyleSheet.create({
     borderColor: '#1976D2',
     borderRadius: 6,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'center'
   },
   cancelButtonText: {
     color: '#1976D2',
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   saveButton: {
     width: '45%',
@@ -263,12 +257,10 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: '#1976D2',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'center'
   },
   saveButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
-  },
+    fontWeight: 'bold'
+  }
 });
-
-export default EditProfileScreen;

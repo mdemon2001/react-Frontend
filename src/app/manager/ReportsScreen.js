@@ -1,4 +1,4 @@
-// src/app/manager/ReportScreen.js
+// src/app/(manager)/ReportScreen.js
 import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
@@ -7,22 +7,26 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Modal,
-  Picker, // or @react-native-picker/picker if needed
   ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+
+// If using @react-native-picker/picker, import that instead:
+import { Picker } from '@react-native-picker/picker';
+
+// expo-router
+import { useRouter } from 'expo-router';
 
 const ReportScreen = () => {
-  const navigation = useNavigation();
+  const router = useRouter();
   const { userToken } = useContext(AuthContext);
 
   // Filters
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState('All'); // 'All' means "All Months"
+  const [selectedMonth, setSelectedMonth] = useState('All'); // 'All' => all months
 
   // Data states
   const [loading, setLoading] = useState(false);
@@ -46,7 +50,7 @@ const ReportScreen = () => {
     setReportData(null);
 
     try {
-      let url = '';
+      let url;
       if (selectedMonth === 'All') {
         // Yearly endpoint
         url = `${apiBaseUrl}/reports/yearly/${selectedYear}`;
@@ -65,12 +69,13 @@ const ReportScreen = () => {
     }
   };
 
-  // Example of handling "Export" (could be a simple alert, or an actual PDF export, etc.)
+  // Example of handling "Export"
   const handleExport = () => {
     // Implement your export logic here
     console.log('Export clicked. Integrate with PDF or CSV logic as needed.');
   };
 
+  // Header
   const renderHeader = () => (
     <View style={styles.header}>
       <Text style={styles.headerTitle}>Reports</Text>
@@ -81,6 +86,7 @@ const ReportScreen = () => {
     </View>
   );
 
+  // Filter Modal
   const renderFilterModal = () => (
     <Modal
       visible={filterModalVisible}
@@ -99,7 +105,6 @@ const ReportScreen = () => {
             style={styles.picker}
             onValueChange={(itemValue) => setSelectedYear(itemValue)}
           >
-            {/* Example: generate a range of years */}
             {Array.from({ length: 5 }, (_, i) => currentYear - 2 + i).map((yr) => (
               <Picker.Item key={yr} label={`${yr}`} value={yr} />
             ))}
@@ -140,6 +145,7 @@ const ReportScreen = () => {
     </Modal>
   );
 
+  // Body based on report data
   const renderBody = () => {
     if (loading) {
       return (
@@ -156,16 +162,12 @@ const ReportScreen = () => {
       );
     }
     if (!reportData) {
-      return null; // no data yet
+      // no data yet
+      return null;
     }
 
-    // If we did a monthly fetch, we'll have fields like:
-    // { month, totalHours, totalCost, averageHours, averageCost, hoursChange, costChange, weeklyAverages, details }
-    // If we did a yearly fetch, we'll have fields like:
-    // { year, totalHours, totalCost, yearHoursChange, yearCostChange, weeklyAverages, months: [ ... ] }
-
-    // Let's unify some of the UI based on the data shape:
-    const isYearly = reportData.year !== undefined; // simple check
+    // Check if it's yearly data
+    const isYearly = reportData.year !== undefined;
 
     if (isYearly) {
       // Yearly data
@@ -186,7 +188,6 @@ const ReportScreen = () => {
             <View style={styles.statCard}>
               <Text style={styles.statLabel}>Total Hours</Text>
               <Text style={styles.statValue}>{totalHours}</Text>
-              {/* Example of a small "vs last year" or "change" */}
               <Text style={styles.statChange}>
                 {yearHoursChange}% vs last year
               </Text>
@@ -200,7 +201,6 @@ const ReportScreen = () => {
             </View>
           </View>
 
-          {/* Weekly Averages */}
           <View style={styles.overviewContainer}>
             <Text style={styles.overviewTitle}>Reports Overview</Text>
             <TouchableOpacity onPress={handleExport}>
@@ -209,11 +209,11 @@ const ReportScreen = () => {
           </View>
           <View style={styles.overviewCards}>
             <View style={styles.overviewCard}>
-              <Text style={styles.overviewLabel}>Average Hours/Week</Text>
+              <Text style={styles.overviewLabel}>Avg Hours/Week</Text>
               <Text style={styles.overviewValue}>{weeklyAverages.hours}</Text>
             </View>
             <View style={styles.overviewCard}>
-              <Text style={styles.overviewLabel}>Average Cost/Week</Text>
+              <Text style={styles.overviewLabel}>Avg Cost/Week</Text>
               <Text style={styles.overviewValue}>${weeklyAverages.cost}</Text>
             </View>
           </View>
@@ -224,7 +224,7 @@ const ReportScreen = () => {
             <View key={m.month} style={styles.monthRow}>
               <Text style={styles.monthName}>{m.month} {year}</Text>
               <View style={styles.monthStats}>
-                <Text style={styles.monthStat}>{m.totalHours} hours</Text>
+                <Text style={styles.monthStat}>{m.totalHours} hrs</Text>
                 <Text style={styles.monthStat}>${m.totalCost}</Text>
               </View>
             </View>
@@ -265,7 +265,6 @@ const ReportScreen = () => {
             </View>
           </View>
 
-          {/* Weekly Averages */}
           <View style={styles.overviewContainer}>
             <Text style={styles.overviewTitle}>Reports Overview</Text>
             <TouchableOpacity onPress={handleExport}>
@@ -274,16 +273,15 @@ const ReportScreen = () => {
           </View>
           <View style={styles.overviewCards}>
             <View style={styles.overviewCard}>
-              <Text style={styles.overviewLabel}>Average Hours/Week</Text>
+              <Text style={styles.overviewLabel}>Avg Hours/Week</Text>
               <Text style={styles.overviewValue}>{weeklyAverages.hours}</Text>
             </View>
             <View style={styles.overviewCard}>
-              <Text style={styles.overviewLabel}>Average Cost/Week</Text>
+              <Text style={styles.overviewLabel}>Avg Cost/Week</Text>
               <Text style={styles.overviewValue}>${weeklyAverages.cost}</Text>
             </View>
           </View>
 
-          {/* Monthly details (like a single month breakdown) */}
           <Text style={styles.sectionTitle}>{month}</Text>
           <Text style={styles.sectionSubtitle}>
             {parseFloat(averageHours).toFixed(2)} avg hours, $
@@ -310,11 +308,16 @@ const ReportScreen = () => {
       {renderFilterModal()}
       {renderBody()}
 
-      {/* Footer */}
+      {/* Footer: 
+          Home => /manager/ManagerDashboardScreen
+          Employees => /manager/EmployeeManagementScreen
+          Reports => current
+          Settings => /shared/SettingsScreen
+      */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('ManagerDashboardScreen')}
+          onPress={() => router.replace('/manager/ManagerDashboardScreen')}
         >
           <Ionicons name="home-outline" size={24} color="#555" />
           <Text>Home</Text>
@@ -322,15 +325,13 @@ const ReportScreen = () => {
 
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => {/* If you have an Employees screen: */ 
-            navigation.navigate('EmployeeManagementScreen');
-          }}
+          onPress={() => router.replace('/manager/EmployeeManagementScreen')}
         >
           <Ionicons name="people-outline" size={24} color="#555" />
           <Text>Employees</Text>
         </TouchableOpacity>
 
-        {/* Current screen: Reports */}
+        {/* Current screen: Reports => highlight */}
         <View style={styles.footerItemActive}>
           <Ionicons name="bar-chart-outline" size={24} color="#1976D2" />
           <Text style={{ color: '#1976D2' }}>Reports</Text>
@@ -338,7 +339,7 @@ const ReportScreen = () => {
 
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('SettingsScreen')}
+          onPress={() => router.replace('/shared/SettingsScreen')}
         >
           <Ionicons name="settings-outline" size={24} color="#555" />
           <Text>Settings</Text>

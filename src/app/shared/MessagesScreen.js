@@ -1,4 +1,4 @@
-// src/shared/MessagesScreen.js
+// src/app/(shared)/MessagesScreen.js
 
 import React, { useState, useEffect, useContext } from 'react';
 import {
@@ -14,22 +14,21 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-
 import { AuthContext } from '../../context/AuthContext';
+import { useRouter } from 'expo-router'; // expo-router instead of useNavigation
 
 // Adjust to your server’s base URL
 const apiBaseUrl = 'http://localhost:5000/api';
 
 // Helper: group users into "MANAGEMENT" vs. "EMPLOYEES"
 function groupUsersByRole(users) {
-  // Tweak this array to include roles that belong under 'Management'
+  // Tweak this array if you have additional manager roles
   const managementRoles = ['Manager', 'CEO', 'Head of Sales'];
 
   const management = [];
   const employees = [];
 
-  users.forEach(u => {
+  users.forEach((u) => {
     if (managementRoles.includes(u.role)) {
       management.push(u);
     } else {
@@ -40,8 +39,8 @@ function groupUsersByRole(users) {
   return { management, employees };
 }
 
-const MessagesScreen = () => {
-  const navigation = useNavigation();
+export default function MessagesScreen() {
+  const router = useRouter();
   const { userToken, userId, userRole } = useContext(AuthContext);
 
   // All users (employees & managers)
@@ -80,12 +79,17 @@ const MessagesScreen = () => {
     }
   };
 
+  // Just do a router.back() for the top-left arrow
+  const handleGoBack = () => {
+    router.back();
+  };
+
   // Open the chat modal with a particular user
   const openChatWithUser = async (user) => {
     setSelectedUser(user);
     setChatVisible(true);
-    setMessages([]);       // Clear old messages
-    setMessageText('');    // Clear input
+    setMessages([]); // Clear old messages
+    setMessageText('');
     await fetchConversation(user._id);
   };
 
@@ -105,10 +109,9 @@ const MessagesScreen = () => {
     }
   };
 
-  // Send a new message to the selected user
+  // Send a new message
   const sendMessage = async () => {
-    if (!messageText.trim()) return;
-    if (!selectedUser) return;
+    if (!messageText.trim() || !selectedUser) return;
 
     try {
       const headers = { Authorization: `Bearer ${userToken}` };
@@ -119,8 +122,8 @@ const MessagesScreen = () => {
       const newMsg = {
         userId,
         text: messageText,
-        timestamp: new Date().toISOString(), // local time for display
-        senderDetails: { name: 'You', role: userRole } // optional
+        timestamp: new Date().toISOString(),
+        senderDetails: { name: 'You', role: userRole }
       };
       setMessages((prev) => [...prev, newMsg]);
 
@@ -139,17 +142,8 @@ const MessagesScreen = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Return to HomeScreen or ManagerDashboardScreen
-  const handleGoBack = () => {
-    if (userRole === 'Manager') {
-      navigation.navigate('ManagerDashboardScreen');
-    } else {
-      navigation.navigate('HomeScreen');
-    }
-  };
-
-  // Filter users by search query (assuming user.name is the field)
-  const filteredUsers = allUsers.filter(u =>
+  // Filter users by search query
+  const filteredUsers = allUsers.filter((u) =>
     u.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -233,7 +227,8 @@ const MessagesScreen = () => {
           {/* Chat Header */}
           <View style={styles.chatHeader}>
             <Text style={styles.chatTitle}>
-              {selectedUser?.name} {selectedUser?.role ? `- ${selectedUser.role}` : ''}
+              {selectedUser?.name}
+              {selectedUser?.role ? ` - ${selectedUser.role}` : ''}
             </Text>
             <TouchableOpacity onPress={() => setChatVisible(false)}>
               <Ionicons name="close" size={24} color="#000" />
@@ -279,10 +274,9 @@ const MessagesScreen = () => {
       </Modal>
     </View>
   );
-};
+}
 
-export default MessagesScreen;
-
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,

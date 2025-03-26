@@ -1,5 +1,4 @@
-// src/app/manager/ApprovalRequestsScreen.js
-
+// src/app/(manager)/ApprovalRequestsScreen.js
 import React, { useEffect, useState, useContext } from 'react';
 import {
   View,
@@ -12,14 +11,16 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
 
 // 1) Import socket.io-client
 import { io } from 'socket.io-client';
 
-const ApprovalRequestsScreen = () => {
-  const navigation = useNavigation();
+// 2) Expo Router
+import { useRouter } from 'expo-router';
+
+export default function ApprovalRequestsScreen() {
+  const router = useRouter();
   const { userToken, userId } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
 
@@ -36,17 +37,16 @@ const ApprovalRequestsScreen = () => {
   // Our Socket instance
   const [socket, setSocket] = useState(null);
 
-  const apiBaseUrl = 'http://localhost:5000/api'; // or your actual base
-  const socketServerUrl = 'http://localhost:5000'; // location of your Socket.io server
+  const apiBaseUrl = 'http://localhost:5001/api'; // or your actual base
+  const socketServerUrl = 'http://localhost:5001'; // location of your Socket.io server
 
   // -- 1. On mount, connect to Socket.io and fetch initial requests
   useEffect(() => {
     // Connect to your backend's Socket.io endpoint
     const s = io(socketServerUrl, {
-      transports: ['websocket'],
+      transports: ['websocket']
       // If you need auth token in the handshake, you can do:
       // extraHeaders: { Authorization: `Bearer ${userToken}` },
-      // or use path/ query etc. 
     });
     setSocket(s);
 
@@ -60,8 +60,7 @@ const ApprovalRequestsScreen = () => {
     // Setup listeners for shiftSwapUpdate, sickLeaveUpdate, holidayUpdate
     s.on('shiftSwapUpdate', (data) => {
       console.log('shiftSwapUpdate received:', data);
-      // We can refresh data or update state
-      fetchAllRequests(); // easiest approach is to re-fetch 
+      fetchAllRequests(); // easiest approach is to re-fetch
     });
     s.on('sickLeaveUpdate', (data) => {
       console.log('sickLeaveUpdate received:', data);
@@ -128,27 +127,33 @@ const ApprovalRequestsScreen = () => {
 
   // We'll unify "Pending" requests from all categories
   const combinedPendingRequests = [
-    ...shiftSwaps.filter(r => r.status === 'Pending').map(r => ({
-      _id: r._id,
-      requestType: 'shiftSwap',
-      userName: r.requester?.name || 'Unknown',
-      details: `Wants to swap shift ${r.currentShift} → ${r.requestedShift}`,
-      submittedAt: r.createdAt,
-    })),
-    ...sickLeaves.filter(r => r.status === 'Pending').map(r => ({
-      _id: r._id,
-      requestType: 'sickLeave',
-      userName: r.user?.name || 'Unknown',
-      details: r.reason,
-      submittedAt: r.reportedAt,
-    })),
-    ...holidays.filter(r => r.status === 'Pending').map(r => ({
-      _id: r._id,
-      requestType: 'holiday',
-      userName: r.user?.name || 'Unknown',
-      details: `Dates: ${formatDate(r.startDate)} - ${formatDate(r.endDate)}\nReason: ${r.reason}`,
-      submittedAt: r.createdAt,
-    })),
+    ...shiftSwaps
+      .filter(r => r.status === 'Pending')
+      .map(r => ({
+        _id: r._id,
+        requestType: 'shiftSwap',
+        userName: r.requester?.name || 'Unknown',
+        details: `Wants to swap shift ${r.currentShift} → ${r.requestedShift}`,
+        submittedAt: r.createdAt
+      })),
+    ...sickLeaves
+      .filter(r => r.status === 'Pending')
+      .map(r => ({
+        _id: r._id,
+        requestType: 'sickLeave',
+        userName: r.user?.name || 'Unknown',
+        details: r.reason,
+        submittedAt: r.reportedAt
+      })),
+    ...holidays
+      .filter(r => r.status === 'Pending')
+      .map(r => ({
+        _id: r._id,
+        requestType: 'holiday',
+        userName: r.user?.name || 'Unknown',
+        details: `Dates: ${formatDate(r.startDate)} - ${formatDate(r.endDate)}\nReason: ${r.reason}`,
+        submittedAt: r.createdAt
+      }))
   ];
 
   // Helper for request type
@@ -182,7 +187,8 @@ const ApprovalRequestsScreen = () => {
     <View style={styles.container}>
       {/* Header: "Request Management" */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.openDrawer?.()}>
+        {/* Menu icon => placeholder for drawer */}
+        <TouchableOpacity onPress={() => console.log('Menu pressed (no drawer in expo-router by default)')}>
           <Ionicons name="menu" size={28} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Request Management</Text>
@@ -212,40 +218,42 @@ const ApprovalRequestsScreen = () => {
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         {combinedPendingRequests.length === 0 ? (
           <Text style={styles.noRequests}>No pending requests.</Text>
-        ) : combinedPendingRequests.map(req => (
-          <View key={req._id} style={styles.requestCard}>
-            {/* Header row: name + type */}
-            <View style={styles.requestHeader}>
-              <Text style={styles.requestName}>{req.userName}</Text>
-              <Text style={styles.requestType}>{friendlyType(req.requestType)}</Text>
-            </View>
-            {/* Details */}
-            <Text style={styles.requestDetails}>{req.details}</Text>
+        ) : (
+          combinedPendingRequests.map(req => (
+            <View key={req._id} style={styles.requestCard}>
+              {/* Header row: name + type */}
+              <View style={styles.requestHeader}>
+                <Text style={styles.requestName}>{req.userName}</Text>
+                <Text style={styles.requestType}>{friendlyType(req.requestType)}</Text>
+              </View>
+              {/* Details */}
+              <Text style={styles.requestDetails}>{req.details}</Text>
 
-            {/* Approve / Deny */}
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
-                onPress={() => handleAction(req._id, req.requestType, 'approve')}
-              >
-                <Text style={styles.actionButtonText}>Approve</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: '#f44336' }]}
-                onPress={() => handleAction(req._id, req.requestType, 'deny')}
-              >
-                <Text style={styles.actionButtonText}>Deny</Text>
-              </TouchableOpacity>
+              {/* Approve / Deny */}
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
+                  onPress={() => handleAction(req._id, req.requestType, 'approve')}
+                >
+                  <Text style={styles.actionButtonText}>Approve</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: '#f44336' }]}
+                  onPress={() => handleAction(req._id, req.requestType, 'deny')}
+                >
+                  <Text style={styles.actionButtonText}>Deny</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        ))}
+          ))
+        )}
       </ScrollView>
 
-      {/* Footer with Home => ManagerDashboardScreen, Settings => SettingsScreen */}
+      {/* Footer with Home => /manager/ManagerDashboardScreen, Settings => /shared/SettingsScreen */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('ManagerDashboardScreen')}
+          onPress={() => router.replace('/manager/ManagerDashboardScreen')}
         >
           <Ionicons name="home-outline" size={24} color="#555" />
           <Text>Home</Text>
@@ -253,7 +261,7 @@ const ApprovalRequestsScreen = () => {
 
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('SettingsScreen')}
+          onPress={() => router.replace('/shared/SettingsScreen')}
         >
           <Ionicons name="settings-outline" size={24} color="#555" />
           <Text>Settings</Text>
@@ -261,24 +269,27 @@ const ApprovalRequestsScreen = () => {
       </View>
     </View>
   );
-};
+}
 
-export default ApprovalRequestsScreen;
-
+// Styles
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1, justifyContent: 'center', alignItems: 'center'
   },
   container: { flex: 1, backgroundColor: '#f9fcff' },
   header: {
-    flexDirection: 'row', padding: 16, alignItems: 'center',
-    backgroundColor: '#fff', justifyContent: 'space-between', elevation: 2,
+    flexDirection: 'row',
+    padding: 16,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    justifyContent: 'space-between',
+    elevation: 2
   },
   headerTitle: { fontSize: 18, fontWeight: 'bold' },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginVertical: 10,
+    marginVertical: 10
   },
   statCard: {
     flex: 1,
@@ -286,55 +297,55 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
-    elevation: 2,
+    elevation: 2
   },
   statTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 5 },
   statNumber: { fontSize: 18, fontWeight: 'bold', color: '#333' },
   noRequests: {
     marginTop: 20,
     textAlign: 'center',
-    color: '#888',
+    color: '#888'
   },
   requestCard: {
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 14,
     marginBottom: 16,
-    elevation: 1,
+    elevation: 1
   },
   requestHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-between'
   },
   requestName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#333'
   },
   requestType: {
     fontSize: 14,
     fontStyle: 'italic',
-    color: '#777',
+    color: '#777'
   },
   requestDetails: {
     marginVertical: 10,
     color: '#555',
-    fontSize: 14,
+    fontSize: 14
   },
   buttonRow: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 10,
+    marginTop: 10
   },
   actionButton: {
     flex: 1,
     padding: 12,
     borderRadius: 6,
-    alignItems: 'center',
+    alignItems: 'center'
   },
   actionButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   footer: {
     borderTopWidth: 1,
@@ -342,9 +353,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 10,
+    paddingVertical: 10
   },
   footerItem: {
-    alignItems: 'center',
-  },
+    alignItems: 'center'
+  }
 });

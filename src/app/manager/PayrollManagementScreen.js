@@ -1,4 +1,4 @@
-// src/app/manager/PayrollManagementScreen.js
+// src/app/(manager)/PayrollManagementScreen.js
 
 import React, { useState, useEffect, useContext } from 'react';
 import {
@@ -15,15 +15,15 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-
 import { AuthContext } from '../../context/AuthContext';
 
-// Adjust to your server's base URL
-const apiBaseUrl = 'http://localhost:5000/api';
+// expo-router
+import { useRouter } from 'expo-router';
 
-const PayrollManagementScreen = () => {
-  const navigation = useNavigation();
+const apiBaseUrl = 'http://localhost:5001/api'; // Adjust to your server's base URL
+
+export default function PayrollManagementScreen() {
+  const router = useRouter();
   const { userToken } = useContext(AuthContext);
 
   // Pay period (default values)
@@ -55,13 +55,12 @@ const PayrollManagementScreen = () => {
         const headers = { Authorization: `Bearer ${userToken}` };
         // Example: GET /users/search?role=employee
         const response = await axios.get(`${apiBaseUrl}/users/search?role=employee`, { headers });
-        // Suppose the backend returns an array of employees:
-        // [ { _id, fullName, employeeId, avatarUrl, rate }, ... ]
+        // Suppose the backend returns [ { _id, fullName, employeeId, avatarUrl, rate }, ... ]
         const loaded = response.data.map((emp) => ({
           ...emp,
-          rate: emp.rate || 25, // default rate if not specified
-          hours: 0,            // to be updated after payroll creation
-          total: 0             // to be updated after payroll creation
+          rate: emp.rate || 25, // default
+          hours: 0,            // updated after payroll creation
+          total: 0             // updated after payroll creation
         }));
         setEmployees(loaded);
       } catch (error) {
@@ -94,7 +93,7 @@ const PayrollManagementScreen = () => {
             const res = await axios.post(
               `${apiBaseUrl}/payroll`,
               {
-                employeeId: emp._id,   // or emp.employeeId if your backend expects that
+                employeeId: emp._id, // or emp.employeeId if needed
                 start: startDate,
                 end: endDate,
                 rate: emp.rate
@@ -110,7 +109,7 @@ const PayrollManagementScreen = () => {
             };
           } catch (error) {
             console.error(`Failed to create payroll for ${emp._id}`, error.response?.data || error);
-            return emp; // fallback: return unchanged
+            return emp; // fallback
           }
         })
       );
@@ -166,7 +165,7 @@ const PayrollManagementScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* If fetch error, show message */}
+      {/* If fetch error */}
       {fetchError && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{fetchError}</Text>
@@ -263,12 +262,11 @@ const PayrollManagementScreen = () => {
         )}
       </ScrollView>
 
-      {/* Footer with two tabs: Home (ManagerDashboardScreen) and Payroll (current) */}
+      {/* Footer with two tabs: Home => /manager/ManagerDashboardScreen and Payroll => current */}
       <View style={styles.footer}>
-        {/* Home tab */}
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('ManagerDashboardScreen')}
+          onPress={() => router.replace('/manager/ManagerDashboardScreen')}
         >
           <Ionicons name="home-outline" size={24} color="#555" />
           <Text style={styles.footerText}>Home</Text>
@@ -325,9 +323,7 @@ const PayrollManagementScreen = () => {
       </Modal>
     </View>
   );
-};
-
-export default PayrollManagementScreen;
+}
 
 const styles = StyleSheet.create({
   wrapper: {

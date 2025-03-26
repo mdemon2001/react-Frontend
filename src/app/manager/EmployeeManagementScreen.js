@@ -1,4 +1,4 @@
-// src/app/manager/EmployeeManagementScreen.js
+// src/app/(manager)/EmployeeManagementScreen.js
 
 import React, { useState, useEffect, useContext } from 'react';
 import {
@@ -12,13 +12,15 @@ import {
   Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { AuthContext } from '../../context/AuthContext';
 
-const EmployeeManagementScreen = () => {
-  const navigation = useNavigation();
+// **expo-router**:
+import { useRouter } from 'expo-router';
+
+export default function EmployeeManagementScreen() {
+  const router = useRouter();
   const { userToken, userId } = useContext(AuthContext);
 
   // Searching
@@ -30,13 +32,13 @@ const EmployeeManagementScreen = () => {
   const [socket, setSocket] = useState(null);
 
   // Adjust as needed
-  const apiBaseUrl = 'http://localhost:5000/api';
-  const socketServerUrl = 'http://localhost:5000';
+  const apiBaseUrl = 'http://localhost:5001/api';
+  const socketServerUrl = 'http://localhost:5001';
 
   useEffect(() => {
     // 1) Connect to socket server
     const s = io(socketServerUrl, {
-      transports: ['websocket'],
+      transports: ['websocket']
       // If needed: extraHeaders: { Authorization: `Bearer ${userToken}` },
     });
     setSocket(s);
@@ -60,7 +62,7 @@ const EmployeeManagementScreen = () => {
     };
   }, [socketServerUrl, searchText]);
 
-  // Fetch employees initially (no query)
+  // Fetch employees initially
   useEffect(() => {
     fetchEmployees('');
   }, []);
@@ -82,8 +84,7 @@ const EmployeeManagementScreen = () => {
     }
   };
 
-  // For real-time searching, you could do fetch on every keystroke
-  // but a typical approach is to fetch on "submit search"
+  // Handle search when user hits "Enter"
   const handleSearchSubmit = () => {
     fetchEmployees(searchText.trim());
   };
@@ -100,11 +101,11 @@ const EmployeeManagementScreen = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.openDrawer?.()}>
+        {/* Drawer icon placeholder */}
+        <TouchableOpacity onPress={() => console.log('Menu pressed (no drawer in expo-router)')}>
           <Ionicons name="menu" size={28} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Employees</Text>
-        {/* No +Add button */}
         <View style={{ width: 28 }} />
       </View>
 
@@ -121,8 +122,6 @@ const EmployeeManagementScreen = () => {
         />
       </View>
 
-      {/* "All Departments" etc. removed per instructions. Now we just show a list. */}
-
       <Text style={styles.countText}>Showing {employees.length} employees</Text>
 
       <ScrollView contentContainerStyle={styles.listContainer}>
@@ -131,14 +130,13 @@ const EmployeeManagementScreen = () => {
             key={emp._id || emp.employeeId}
             style={styles.employeeCard}
             onPress={() => {
-              // Possibly navigate to an EmployeeDetailScreen, e.g.:
-              // navigation.navigate('EmployeeDetailScreen', { userId: emp._id });
+              // Possibly push to an EmployeeDetail screen if needed:
+              // router.push({ pathname: '/manager/EmployeeDetailScreen', params: { id: emp._id } })
             }}
           >
-            {/* If you have an avatar or profileImage, you could show here */}
+            {/* If you have an avatar or profileImage, you could show it here */}
             <View style={styles.employeeInfo}>
               <Text style={styles.employeeName}>{emp.fullName}</Text>
-              {/* Excluding jobTitle */}
               <Text style={styles.employeeEmail}>{emp.email}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#666" />
@@ -146,17 +144,22 @@ const EmployeeManagementScreen = () => {
         ))}
       </ScrollView>
 
-      {/* Footer: Home => ManagerDashboardScreen, Employees => current (highlight), Reports => ReportsScreen, Settings => SettingsScreen */}
+      {/* Footer: 
+          Home => /manager/ManagerDashboardScreen
+          Employees => current
+          Reports => /manager/ReportsScreen
+          Settings => /shared/SettingsScreen
+      */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('ManagerDashboardScreen')}
+          onPress={() => router.replace('/manager/ManagerDashboardScreen')}
         >
           <Ionicons name="home-outline" size={24} color="#555" />
           <Text>Home</Text>
         </TouchableOpacity>
 
-        {/* Current screen: Employees => highlight or color */}
+        {/* Current screen: Employees => highlight */}
         <View style={styles.footerItemActive}>
           <Ionicons name="people-outline" size={24} color="#1976D2" />
           <Text style={{ color: '#1976D2' }}>Employees</Text>
@@ -164,7 +167,7 @@ const EmployeeManagementScreen = () => {
 
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('ReportsScreen')}
+          onPress={() => router.replace('/manager/ReportsScreen')}
         >
           <Ionicons name="bar-chart-outline" size={24} color="#555" />
           <Text>Reports</Text>
@@ -172,7 +175,7 @@ const EmployeeManagementScreen = () => {
 
         <TouchableOpacity
           style={styles.footerItem}
-          onPress={() => navigation.navigate('SettingsScreen')}
+          onPress={() => router.replace('/shared/SettingsScreen')}
         >
           <Ionicons name="settings-outline" size={24} color="#555" />
           <Text>Settings</Text>
@@ -180,13 +183,14 @@ const EmployeeManagementScreen = () => {
       </View>
     </View>
   );
-};
+}
 
-export default EmployeeManagementScreen;
-
+// Example styles
 const styles = StyleSheet.create({
   loadingContainer: {
-    flex: 1, justifyContent: 'center', alignItems: 'center'
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center'
   },
   container: {
     flex: 1,
@@ -249,16 +253,16 @@ const styles = StyleSheet.create({
     marginTop: 2
   },
   footer: {
-    flexDirection: 'row',
-    paddingVertical: 10,
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    height: 60,
     borderTopWidth: 1,
     borderColor: '#ddd',
     backgroundColor: '#fff',
-    alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'space-around',
-    position: 'absolute',
-    bottom: 0,
-    width: '100%'
+    alignItems: 'center'
   },
   footerItem: {
     alignItems: 'center'
